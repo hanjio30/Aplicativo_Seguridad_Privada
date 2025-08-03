@@ -61,6 +61,9 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     implementation("net.zetetic:android-database-sqlcipher:4.5.4")
     implementation("androidx.sqlite:sqlite-framework:2.4.0")
+
+    // Biometric Authentication
+    implementation ("androidx.biometric:biometric:1.1.0")
     
     // Para encriptación y seguridad
     implementation("androidx.security:security-crypto:1.1.0-alpha06")

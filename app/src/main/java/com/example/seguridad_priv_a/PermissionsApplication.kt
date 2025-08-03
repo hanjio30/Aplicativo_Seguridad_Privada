@@ -2,20 +2,49 @@ package com.example.seguridad_priv_a
 
 import android.app.Application
 import com.example.seguridad_priv_a.data.DataProtectionManager
+import com.example.seguridad_priv_a.data.SecurityAuditManager
 
 class PermissionsApplication : Application() {
-    
-    val dataProtectionManager by lazy {
-        DataProtectionManager(this)
-    }
-    
+
+    lateinit var dataProtectionManager: DataProtectionManager
+        private set
+
+    lateinit var securityAuditManager: SecurityAuditManager
+        private set
+
     override fun onCreate() {
         super.onCreate()
-        
-        // Inicializar el sistema de protección de datos
+
+        // Inicializar gestores de seguridad
+        dataProtectionManager = DataProtectionManager(this)
+        securityAuditManager = SecurityAuditManager(this)
+
+        // Inicializar componentes
         dataProtectionManager.initialize()
-        
-        // Log de inicio de aplicación
-        dataProtectionManager.logAccess("APPLICATION", "App iniciada")
+        securityAuditManager.initialize()
+
+        // Registrar inicio de aplicación
+        securityAuditManager.recordAuditEvent(
+            eventType = "APPLICATION_START",
+            resource = "PermissionsApplication",
+            success = true,
+            details = "Aplicación iniciada correctamente"
+        )
+
+        dataProtectionManager.logAccess("APPLICATION", "Aplicación iniciada")
+    }
+
+    override fun onTerminate() {
+        super.onTerminate()
+
+        // Registrar cierre de aplicación
+        securityAuditManager.recordAuditEvent(
+            eventType = "APPLICATION_TERMINATE",
+            resource = "PermissionsApplication",
+            success = true,
+            details = "Aplicación terminada"
+        )
+
+        dataProtectionManager.logAccess("APPLICATION", "Aplicación terminada")
     }
 }
