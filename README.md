@@ -1,5 +1,6 @@
-📱 Aplicación de Seguridad y Privacidad Android
+##📱 Aplicación de Seguridad y Privacidad Android
 Una aplicación Android avanzada diseñada para demostrar e implementar las mejores prácticas de seguridad, privacidad y protección de datos en dispositivos móviles. Este proyecto presenta una arquitectura de seguridad robusta con múltiples capas de protección y características forenses.
+
 🛡️ Características de Seguridad
 Gestión de Permisos Inteligente
 
