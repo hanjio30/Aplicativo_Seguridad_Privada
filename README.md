@@ -1,66 +1,110 @@
-# App de Seguridad y Privacidad
+📱 Aplicación de Seguridad y Privacidad Android
+Una aplicación Android avanzada diseñada para demostrar e implementar las mejores prácticas de seguridad, privacidad y protección de datos en dispositivos móviles. Este proyecto presenta una arquitectura de seguridad robusta con múltiples capas de protección y características forenses.
+🛡️ Características de Seguridad
+Gestión de Permisos Inteligente
 
-Una aplicación Android que demuestra el manejo seguro de permisos y protección de datos personales.
+Control granular de permisos: Gestión individual de permisos críticos (Cámara, Micrófono, Contactos, Ubicación, Teléfono, Galería)
+Estados de permisos en tiempo real: Monitoreo dinámico del estado de cada permiso
+Interfaz intuitiva: RecyclerView con adaptadores personalizados para una experiencia de usuario fluida
 
-## Características
+Encriptación y Protección de Datos Avanzada
 
-### Gestión de Permisos
-- **Cámara**: Captura de fotos con manejo seguro
-- **Galería**: Acceso a imágenes del dispositivo
-- **Micrófono**: Grabación de audio con permisos dinámicos
-- **Contactos**: Lectura segura de la lista de contactos
-- **Teléfono**: Funcionalidad de llamadas
-- **Ubicación**: Acceso a localización del usuario
+Encriptación AES-256-GCM: Implementación de EncryptedSharedPreferences para datos sensibles
+Rotación automática de claves: Sistema que rota las claves maestras cada 30 días automáticamente
+Verificación de integridad HMAC: Cada dato almacenado incluye verificación de integridad usando HMAC-SHA256
+Key Derivation con Salt: Generación de claves derivadas con salt único por usuario
+Migración segura de datos: Sistema automático para migrar datos entre claves rotadas
 
-### Seguridad y Privacidad
-- **Protección de Datos**: Sistema de logging encriptado
-- **Almacenamiento Seguro**: Base de datos SQLCipher
-- **Permisos Runtime**: Solicitud dinámica de permisos
-- **Política de Privacidad**: Información transparente sobre el uso de datos
+Sistema de Auditoría y Monitoreo
 
-## Tecnologías Utilizadas
+Auditoría completa de eventos: Registro detallado de todas las operaciones sensibles
+Detección de anomalías: Identificación automática de patrones sospechosos de acceso
+Rate Limiting: Protección contra ataques de fuerza bruta y acceso excesivo
+Alertas de seguridad: Sistema de alertas categorizadas por severidad (LOW, MEDIUM, HIGH)
+Exportación forense: Logs exportables en formato JSON con firma digital
 
-- **Kotlin**: Lenguaje principal
-- **Android Jetpack**: Componentes modernos
-- **SQLCipher**: Encriptación de base de datos
-- **Camera2 API**: Manejo avanzado de cámara
-- **Security Crypto**: Encriptación de datos sensibles
+Autenticación Biométrica Robusta
 
-## Instalación
+BiometricPrompt API: Integración completa con autenticación biométrica nativa
+Fallback a PIN/Patrón: Sistema de respaldo cuando la biometría no está disponible
+Timeout de sesión: Cierre automático por inactividad después de 5 minutos
+Autenticación multicapa: Verificación antes de acceder a datos sensibles
 
-1. Clona el repositorio
-2. Abre el proyecto en Android Studio
-3. Sincroniza las dependencias
-4. Ejecuta en dispositivo o emulador
+🏗️ Arquitectura de Seguridad
+Zero-Trust Architecture
 
-## Estructura del Proyecto
+Validación por operación: Cada acción sensible requiere validación independiente
+Principio de menor privilegio: Acceso mínimo necesario por contexto
+Sesiones seguras: Tokens temporales para mantener sesiones autenticadas
+Attestation de integridad: Verificación continua de la integridad de la aplicación
 
-```
-app/
-├── src/main/java/com/example/seguridad_priv_a/
-│   ├── MainActivity.kt                 # Pantalla principal
-│   ├── PermissionsApplication.kt       # Configuración global
-│   ├── data/
-│   │   ├── DataProtectionManager.kt    # Gestión de datos seguros
-│   │   └── PermissionItem.kt          # Modelo de permisos
-│   ├── adapter/
-│   │   └── PermissionsAdapter.kt      # Adaptador RecyclerView
-│   └── [Actividades individuales]
-└── res/
-    ├── layout/                        # Diseños XML
-    ├── values/                        # Recursos y strings
-    └── xml/                          # Configuraciones
-```
+Protección Anti-Tampering
 
-## Permisos Requeridos
+Detección de debugging: Identificación de intentos de análisis en tiempo de ejecución
+Verificación de firma: Validación de la integridad de la aplicación
+Protección contra emuladores: Detección de entornos de análisis
+Obfuscación de datos: Protección de strings y constantes criptográficas sensibles
 
-- `CAMERA` - Para captura de fotos
-- `READ_MEDIA_IMAGES` - Acceso a galería
-- `RECORD_AUDIO` - Grabación de audio
-- `READ_CONTACTS` - Lectura de contactos
-- `CALL_PHONE` - Realizar llamadas
-- `ACCESS_COARSE_LOCATION` - Ubicación aproximada
+Framework de Anonimización
 
-## Licencia
+Algoritmos avanzados: Implementación de k-anonymity y l-diversity
+Differential Privacy: Protección matemática para datos numéricos
+Data Masking inteligente: Técnicas específicas por tipo de dato
+Políticas de retención: Sistema configurable para gestión del ciclo de vida de datos
 
-Este proyecto es para fines educativos y demostrativos.
+Análisis Forense y Compliance
+
+Chain of Custody: Mantenimiento de la cadena de custodia para evidencias digitales
+Logs tamper-evident: Sistema de logs a prueba de manipulación
+Compliance GDPR/CCPA: Generación automática de reportes de cumplimiento
+Herramientas forenses: Utilidades para investigación de incidentes de seguridad
+
+📊 Características Técnicas
+Tecnologías Implementadas
+
+Android Jetpack Security: Para encriptación y almacenamiento seguro
+BiometricPrompt API: Autenticación biométrica nativa
+JSON Web Signatures: Para firmado digital de logs
+Cryptographic APIs: Implementación completa de primitivas criptográficas
+HMAC y SHA-256: Para verificación de integridad
+
+Gestión de Datos
+
+Almacenamiento local encriptado: Todos los datos sensibles están encriptados
+Logs de auditoría: Sistema completo de logging para análisis forense
+Limpieza segura: Borrado criptográfico de datos sensibles
+No compartición de datos: Arquitectura completamente local sin transmisión externa
+
+🎯 Casos de Uso
+Esta aplicación es ideal para:
+
+Demostración educativa de mejores prácticas de seguridad móvil
+Prototipo de referencia para aplicaciones que manejan datos sensibles
+Testing de seguridad y evaluación de vulnerabilidades
+Compliance y auditoría de sistemas de protección de datos
+Investigación en seguridad móvil y forense digital
+
+🔒 Principios de Seguridad Implementados
+
+Confidencialidad: Encriptación end-to-end de todos los datos sensibles
+Integridad: Verificación HMAC y firma digital de logs
+Disponibilidad: Sistema robusto con múltiples fallbacks
+Autenticación: Verificación biométrica y PIN/patrón
+Autorización: Control granular de permisos por recurso
+Auditabilidad: Logging completo de todas las operaciones
+No repudio: Firma digital de eventos críticos
+
+📱 Compatibilidad
+
+Android API Level: 23+ (Android 6.0 Marshmallow)
+Arquitecturas: ARM64, ARM32, x86_64
+Biometría: Compatible con huella dactilar, reconocimiento facial y iris
+Almacenamiento: Soporte para dispositivos con y sin hardware de seguridad
+
+ Capturas de Pantalla
+<img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/6eec9512-bcbd-4ecd-9b62-e8de8b1e90a6" />
+<img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/b4d7e96a-c973-4eea-b4ae-e1613acec8bd" />
+<img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/279d1bc0-a84a-431f-aae8-52d12652ca48" />
+<img width="720" height="1600" alt="image" src="https://github.com/user-attachments/assets/fd00a14f-6546-42ce-9f54-b7556050a2cd" />
+
+Nota: Esta aplicación está diseñada con fines educativos y de demostración. Implementa estándares de seguridad de nivel empresarial para mostrar las mejores prácticas en desarrollo seguro de aplicaciones Android.
