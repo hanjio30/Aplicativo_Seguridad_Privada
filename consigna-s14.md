@@ -1,137 +1,36 @@
 # Evaluación Técnica: Análisis y Mejora de Seguridad en Aplicación Android
 
-## Introducción
-Esta evaluación técnica se basa en una aplicación Android que implementa un sistema de demostración de permisos y protección de datos. La aplicación utiliza tecnologías modernas como Kotlin, Android Security Crypto, SQLCipher y patrones de arquitectura MVVM.
-
-## Parte 1: Análisis de Seguridad Básico (0-7 puntos)
-
-### 1.1 Identificación de Vulnerabilidades (2 puntos)
+## Parte 1: Análisis de Seguridad Básico 
+### 1.1 Identificación de Vulnerabilidades
 Analiza el archivo `DataProtectionManager.kt` y responde:
 - ¿Qué método de encriptación se utiliza para proteger datos sensibles?
-- Identifica al menos 2 posibles vulnerabilidades en la implementación actual del logging
+- El sistema implementa AES-256-GCM como método principal de encriptación para proteger los datos sensibles. Específicamente, utiliza una clave maestra con esquema AES256_GCM, mientras que para las claves individuales emplea AES256_SIV y para los valores AES256_GCM. Esta implementación se realiza a través de EncryptedSharedPreferences de Android Jetpack Security, que proporciona encriptación robusta a nivel de archivo, asegurando que los datos almacenados localmente estén protegidos mediante algoritmos criptográficos de grado militar reconocidos por su alta seguridad.
+  
+- Identifica al menos 2 posibles vulnerabilidades en la implementación actual del logging.
+- La primera vulnerabilidad crítica es que los logs de acceso se almacenan en SharedPreferences normales sin encriptación, exponiendo metadatos sensibles como los nombres de las claves almacenadas ("Dato almacenado de forma segura: $key"), lo que podría revelar información sobre qué tipos de datos maneja la aplicación. La segunda vulnerabilidad es el escape incorrecto de caracteres en el manejo de strings, donde se usa "\n" (doble backslash) en lugar de "\n", causando que los logs se almacenen como texto literal "\n" en lugar de saltos de línea reales, generando problemas de parsing y acumulación incorrecta de registros que podrían comprometer la integridad del sistema de auditoría.
+  
 - ¿Qué sucede si falla la inicialización del sistema de encriptación?
+- Cuando falla la inicialización del sistema de encriptación, el código implementa automáticamente un mecanismo de fallback que degrada la seguridad al usar SharedPreferences normales sin encriptación ("fallback_prefs"), permitiendo que la aplicación continúe funcionando pero almacenando todos los datos sensibles en texto plano. Esta implementación es problemática porque prioriza la disponibilidad sobre la seguridad sin notificar al usuario sobre la degradación, y además, el método getDataProtectionInfo() continuará reportando falsamente que usa "Encriptación: AES-256-GCM" aunque realmente esté operando sin protección criptográfica, creando una falsa sensación de seguridad.
 
-### 1.2 Permisos y Manifiesto (2 puntos)
+### 1.2 Permisos y Manifiesto
 Examina `AndroidManifest.xml` y `MainActivity.kt`:
-- Lista todos los permisos peligrosos declarados en el manifiesto
+- Lista todos los permisos peligrosos declarados en el manifiesto.
+- Los permisos peligrosos declarados en el AndroidManifest.xml incluyen CAMERA (acceso a la cámara del dispositivo), READ_EXTERNAL_STORAGE y READ_MEDIA_IMAGES (acceso a archivos multimedia almacenados), RECORD_AUDIO (grabación de audio mediante micrófono), READ_CONTACTS (lectura de la lista de contactos), CALL_PHONE (realizar llamadas telefónicas directas), SEND_SMS (envío de mensajes de texto), y ACCESS_COARSE_LOCATION (obtención de ubicación aproximada del dispositivo). Estos permisos son considerados peligrosos por Android porque pueden acceder a información personal sensible o realizar acciones que afectan la privacidad del usuario, requiriendo aprobación explícita en tiempo de ejecución para dispositivos con Android 6.0 (API 23) o superior.
+  
 - ¿Qué patrón se utiliza para solicitar permisos en runtime?
-- Identifica qué configuración de seguridad previene backups automáticos
+- El código implementa el patrón moderno de ActivityResultContracts para solicitar permisos en tiempo de ejecución, específicamente utilizando ActivityResultContracts.RequestPermission() registrado como requestPermissionLauncher. Este patrón reemplaza el método obsoleto onRequestPermissionsResult y proporciona mejor gestión del ciclo de vida de la actividad. El flujo funciona almacenando temporalmente el permiso solicitado en currentRequestedPermission, lanzando la solicitud con requestPermissionLauncher.launch(perm), y manejando la respuesta en el callback lambda que actualiza el estado del permiso, registra la acción en los logs de protección de datos, y abre automáticamente la actividad
+correspondiente si el permiso es otorgado.
 
-### 1.3 Gestión de Archivos (3 puntos)
+- Identifica qué configuración de seguridad previene backups automáticos.
+- La configuración android:allowBackup="false" en el elemento <application> del manifiesto previene que Android realice backups automáticos de los datos de la aplicación, protegiéndolos de ser incluidos en las copias de seguridad del sistema que podrían ser restauradas en otros dispositivos o accedidas por terceros. Adicionalmente, el manifiesto incluye configuraciones complementarias como android:dataExtractionRules="@xml/data_extraction_rules" y android:fullBackupContent="@xml/backup_rules" que proporcionan control granular sobre qué datos específicos pueden ser respaldados, creando una estrategia de seguridad multicapa que protege la información sensible manejada por el DataProtectionManager y otros componentes de la aplicación contra exposición no autorizada a través de mecanismos de backup del sistema operativo.
+
+### 1.3 Gestión de Archivos 
 Revisa `CameraActivity.kt` y `file_paths.xml`:
 - ¿Cómo se implementa la compartición segura de archivos de imágenes?
+- La compartición segura de archivos se implementa mediante FileProvider de Android que genera URIs seguros usando FileProvider.getUriForFile() con la autoridad "com.example.seguridad_priv_a.fileprovider". El sistema crea archivos temporales con nombres únicos basados en timestamp (formato "JPEG_yyyyMMdd_HHmmss_.jpg") en el directorio getExternalFilesDir(null)/Pictures, y utiliza el archivo file_paths.xml para definir rutas accesibles específicamente la carpeta "Pictures" bajo external-files-path. Esta implementación reemplaza el uso directo de URIs file:// inseguros, proporcionando acceso controlado y temporal a archivos específicos sin exponer todo el sistema de archivos, mientras que el DataProtectionManager registra todas las operaciones y almacena de forma encriptada las referencias a las imágenes capturadas para auditoría y recuperación posterior.
+  
 - ¿Qué autoridad se utiliza para el FileProvider?
-- Explica por qué no se debe usar `file://` URIs directamente
-
-## Parte 2: Implementación y Mejoras Intermedias (8-14 puntos)
-
-### 2.1 Fortalecimiento de la Encriptación (3 puntos)
-Modifica `DataProtectionManager.kt` para implementar:
-- Rotación automática de claves maestras cada 30 días
-- Verificación de integridad de datos encriptados usando HMAC
-- Implementación de key derivation con salt único por usuario
-
-```kotlin
-// Ejemplo de estructura esperada
-fun rotateEncryptionKey(): Boolean {
-    // Tu implementación aquí
-}
-
-fun verifyDataIntegrity(key: String): Boolean {
-    // Tu implementación aquí
-}
-```
-
-### 2.2 Sistema de Auditoría Avanzado (3 puntos)
-Crea una nueva clase `SecurityAuditManager` que:
-- Detecte intentos de acceso sospechosos (múltiples solicitudes en corto tiempo)
-- Implemente rate limiting para operaciones sensibles
-- Genere alertas cuando se detecten patrones anómalos
-- Exporte logs en formato JSON firmado digitalmente
-
-### 2.3 Biometría y Autenticación (3 puntos)
-Implementa autenticación biométrica en `DataProtectionActivity.kt`:
-- Integra BiometricPrompt API para proteger el acceso a logs
-- Implementa fallback a PIN/Pattern si biometría no está disponible
-- Añade timeout de sesión tras inactividad de 5 minutos
-
-## Parte 3: Arquitectura de Seguridad Avanzada (15-20 puntos)
-
-### 3.1 Implementación de Zero-Trust Architecture (3 puntos)
-Diseña e implementa un sistema que:
-- Valide cada operación sensible independientemente
-- Implemente principio de menor privilegio por contexto
-- Mantenga sesiones de seguridad con tokens temporales
-- Incluya attestation de integridad de la aplicación
-
-### 3.2 Protección Contra Ingeniería Inversa (3 puntos)
-Implementa medidas anti-tampering:
-- Detección de debugging activo y emuladores
-- Obfuscación de strings sensibles y constantes criptográficas
-- Verificación de firma digital de la aplicación en runtime
-- Implementación de certificate pinning para comunicaciones futuras
-
-### 3.3 Framework de Anonimización Avanzado (2 puntos)
-Mejora el método `anonymizeData()` actual implementando:
-- Algoritmos de k-anonimity y l-diversity
-- Differential privacy para datos numéricos
-- Técnicas de data masking específicas por tipo de dato
-- Sistema de políticas de retención configurables
-
-```kotlin
-class AdvancedAnonymizer {
-    fun anonymizeWithKAnonymity(data: List<PersonalData>, k: Int): List<AnonymizedData>
-    fun applyDifferentialPrivacy(data: NumericData, epsilon: Double): NumericData
-    fun maskByDataType(data: Any, maskingPolicy: MaskingPolicy): Any
-}
-```
-
-### 3.4 Análisis Forense y Compliance (2 puntos)
-Desarrolla un sistema de análisis forense que:
-- Mantenga chain of custody para evidencias digitales
-- Implemente logs tamper-evident usando blockchain local
-- Genere reportes de compliance GDPR/CCPA automáticos
-- Incluya herramientas de investigación de incidentes
-
-## Criterios de Evaluación
-
-### Puntuación Base (0-7 puntos):
-- Correcta identificación de vulnerabilidades y patrones de seguridad
-- Comprensión de conceptos básicos de Android Security
-- Documentación clara de hallazgos
-
-### Puntuación Intermedia (8-14 puntos):
-- Implementación funcional de mejoras de seguridad
-- Código limpio siguiendo principios SOLID
-- Manejo adecuado de excepciones y edge cases
-- Pruebas unitarias para componentes críticos
-
-### Puntuación Avanzada (15-20 puntos):
-- Arquitectura robusta y escalable
-- Implementación de patrones de seguridad industry-standard
-- Consideración de amenazas emergentes y mitigaciones
-- Documentación técnica completa con diagramas de arquitectura
-- Análisis de rendimiento y optimización de operaciones criptográficas
-
-## Entregables Requeridos
-
-1. **Código fuente** de todas las implementaciones solicitadas
-2. **Informe técnico** detallando vulnerabilidades encontradas y soluciones aplicadas
-3. **Diagramas de arquitectura** para componentes de seguridad nuevos
-4. **Suite de pruebas** automatizadas para validar medidas de seguridad
-5. **Manual de deployment** con consideraciones de seguridad para producción
-
-## Tiempo Estimado
-- Parte 1: 2-3 horas
-- Parte 2: 4-6 horas  
-- Parte 3: 8-12 horas
-
-## Recursos Permitidos
-- Documentación oficial de Android
-- OWASP Mobile Security Guidelines
-- Libraries de seguridad open source
-- Stack Overflow y comunidades técnicas
-
----
-
-**Nota**: Esta evaluación requiere conocimientos sólidos en seguridad móvil, criptografía aplicada y arquitecturas Android modernas. Se valorará especialmente la capacidad de aplicar principios de security-by-design y el pensamiento crítico en la identificación de vectores de ataque.
+- La autoridad utilizada para el FileProvider es "com.example.seguridad_priv_a.fileprovider", que se define tanto en el AndroidManifest.xml como elemento <provider> con android:authorities="com.example.seguridad_priv_a.fileprovider", como en el código CameraActivity.kt cuando se invoca FileProvider.getUriForFile() para generar URIs seguros. Esta autoridad actúa como un identificador único que permite al sistema Android identificar y validar el proveedor de archivos específico de la aplicación, asegurando que solo esta aplicación pueda acceder a los archivos compartidos a través de este FileProvider particular, y estableciendo un namespace seguro para la compartición controlada de recursos entre componentes de la aplicación y otras aplicaciones autorizadas.
+  
+- Explica por qué no se debe usar `file://` URIs directamente.
+- Los URIs file:// no deben usarse directamente porque representan un grave riesgo de seguridad al exponer rutas absolutas del sistema de archivos que pueden ser accedidas por otras aplicaciones maliciosas, violando el principio de sandboxing de Android. Desde Android 7.0 (API 24), compartir URIs file:// entre aplicaciones lanza FileUriExposedException, forzando el uso de content:// URIs más seguros generados por FileProvider. Los URIs file:// también carecen de control granular de permisos, mientras que FileProvider permite definir exactamente qué directorios son accesibles a través de file_paths.xml, otorgar permisos temporales específicos con android:grantUriPermissions="true", y revocar automáticamente el acceso cuando ya no es necesario, creando un sistema de compartición de archivos más seguro, controlado y compatible con las políticas de seguridad modernas de Android.
